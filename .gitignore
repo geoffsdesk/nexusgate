@@ -1,0 +1,50 @@
+# Rust
+gateway-core/target/
+**/*.rs.bk
+
+# Go
+ai-orchestrator/bin/
+contract-engine/bin/
+security/bin/
+**/vendor/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# OS
+Thumbs.db
+desktop.ini
+
+# Build artifacts
+dist/
+build/
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Docker volumes
+pgdata/
+
+# Logs
+*.log
+logs/
+
+# Test coverage
+coverage/
+*.cover
+*.out
+
+# Temporary files
+tmp/
+temp/

@@ -1,0 +1,64 @@
+[package]
+name = "nexusgate-gateway"
+version = "0.1.0"
+edition = "2021"
+description = "NexusGate AI-Native API Gateway Core"
+license = "Apache-2.0"
+
+[dependencies]
+# Async runtime
+tokio = { version = "1", features = ["full"] }
+
+# HTTP server & client
+hyper = { version = "1", features = ["full"] }
+hyper-util = { version = "0.1", features = ["full"] }
+http-body-util = "0.1"
+bytes = "1"
+
+# Routing & middleware
+tower = { version = "0.4", features = ["full"] }
+tower-http = { version = "0.5", features = ["cors", "trace", "compression-gzip", "timeout"] }
+matchit = "0.8"
+
+# gRPC (internal API for route management)
+tonic = "0.12"
+prost = "0.13"
+
+# Concurrent data structures
+dashmap = "6"
+
+# Serialization
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+# HTTP client for proxying
+reqwest = { version = "0.12", features = ["json", "rustls-tls"] }
+
+# Configuration
+toml = "0.8"
+
+# Logging & tracing
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+
+# Metrics
+metrics = "0.23"
+metrics-exporter-prometheus = "0.15"
+
+# UUID
+uuid = { version = "1", features = ["v4", "serde"] }
+
+# Time
+chrono = { version = "0.4", features = ["serde"] }
+
+# Error handling
+thiserror = "1"
+anyhow = "1"
+
+[build-dependencies]
+tonic-build = "0.12"
+
+[dev-dependencies]
+tokio-test = "0.4"
+pretty_assertions = "1"
+wiremock = "0.6"

@@ -1,0 +1,98 @@
+version: "3.9"
+
+services:
+  # ── Gateway Core (Rust) ──
+  gateway-core:
+    build:
+      context: ./gateway-core
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"   # Public gateway
+      - "8090:8090"   # Management API
+      - "9090:9090"   # Prometheus metrics
+    environment:
+      - RUST_LOG=nexusgate_gateway=debug,tower_http=debug
+      - NEXUSGATE_CONFIG=/etc/nexusgate/nexusgate.toml
+    volumes:
+      - ./deployments/nexusgate.toml:/etc/nexusgate/nexusgate.toml:ro
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - nexusgate
+
+  # ── AI Orchestrator (Go) ──
+  ai-orchestrator:
+    build:
+      context: ./ai-orchestrator
+      dockerfile: Dockerfile
+    ports:
+      - "8081:8081"
+    environment:
+      - ORCHESTRATOR_PORT=8081
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - DATABASE_URL=postgres://nexusgate:nexusgate@postgres:5432/nexusgate?sslmode=disable
+    depends_on:
+      - postgres
+    networks:
+      - nexusgate
+
+  # ── Contract Engine (Go) ──
+  contract-engine:
+    build:
+      context: ./contract-engine
+      dockerfile: Dockerfile
+    ports:
+      - "8082:8082"
+    environment:
+      - CONTRACT_ENGINE_PORT=8082
+      - DATABASE_URL=postgres://nexusgate:nexusgate@postgres:5432/nexusgate?sslmode=disable
+    depends_on:
+      - postgres
+    networks:
+      - nexusgate
+
+  # ── Security Service (Go) ──
+  security:
+    build:
+      context: ./security
+      dockerfile: Dockerfile
+    ports:
+      - "8083:8083"
+    environment:
+      - SECURITY_PORT=8083
+      - DATABASE_URL=postgres://nexusgate:nexusgate@postgres:5432/nexusgate?sslmode=disable
+    depends_on:
+      - postgres
+    networks:
+      - nexusgate
+
+  # ── Infrastructure ──
+  postgres:
+    image: postgres:16-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: nexusgate
+      POSTGRES_PASSWORD: nexusgate
+      POSTGRES_DB: nexusgate
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - nexusgate
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    networks:
+      - nexusgate
+
+networks:
+  nexusgate:
+    driver: bridge
+
+volumes:
+  pgdata:

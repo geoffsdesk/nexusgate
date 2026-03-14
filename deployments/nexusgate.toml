@@ -1,0 +1,37 @@
+# NexusGate Gateway Configuration
+
+[server]
+listen_addr = "0.0.0.0:8080"
+management_addr = "0.0.0.0:8090"
+metrics_addr = "0.0.0.0:9090"
+max_connections = 10000
+request_timeout_ms = 30000
+graceful_shutdown_timeout_ms = 15000
+
+[proxy]
+connect_timeout_ms = 5000
+request_timeout_ms = 30000
+max_retries = 3
+retry_backoff_ms = 100
+buffer_size = 65536
+
+[security]
+tls_enabled = false
+mtls_enabled = false
+cors_allowed_origins = ["*"]
+
+[connectors.rest]
+enabled = true
+openapi_discovery = true
+
+[connectors.graphql]
+enabled = true
+introspection = true
+
+[connectors.grpc]
+enabled = true
+reflection = true
+
+[connectors.database]
+enabled = true
+connection_pool_size = 20
