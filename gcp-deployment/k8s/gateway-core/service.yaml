@@ -1,0 +1,26 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: gateway-core
+  namespace: nexusgate
+  labels:
+    app.kubernetes.io/name: gateway-core
+    app.kubernetes.io/component: gateway
+    app.kubernetes.io/part-of: nexusgate
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: gateway-core
+  ports:
+    - name: gateway
+      port: 8080
+      targetPort: gateway
+      protocol: TCP
+    - name: management
+      port: 8090
+      targetPort: management
+      protocol: TCP
+    - name: metrics
+      port: 9090
+      targetPort: metrics
+      protocol: TCP

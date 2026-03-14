@@ -1,0 +1,65 @@
+# ============================================================================
+# External ingress for the NexusGate gateway.
+# Uses GKE's default Ingress controller (GCE L7 load balancer).
+# For production, add TLS with a managed certificate.
+# ============================================================================
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: nexusgate-ingress
+  namespace: nexusgate
+  labels:
+    app.kubernetes.io/name: nexusgate
+    app.kubernetes.io/component: ingress
+  annotations:
+    # GKE-managed TLS certificate (uncomment and set your domain)
+    # networking.gke.io/managed-certificates: nexusgate-cert
+    # kubernetes.io/ingress.global-static-ip-name: nexusgate-ip
+    kubernetes.io/ingress.class: "gce"
+spec:
+  defaultBackend:
+    service:
+      name: gateway-core
+      port:
+        name: gateway
+  rules:
+    - http:
+        paths:
+          # All gateway traffic (public API surface)
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: gateway-core
+                port:
+                  name: gateway
+          # SNP protocol endpoint (contract negotiation)
+          - path: /snp
+            pathType: Prefix
+            backend:
+              service:
+                name: contract-engine
+                port:
+                  name: http
+---
+# Internal-only service for management/admin APIs
+# These should NOT be exposed through the public ingress
+apiVersion: v1
+kind: Service
+metadata:
+  name: gateway-management
+  namespace: nexusgate
+  labels:
+    app.kubernetes.io/name: gateway-core
+    app.kubernetes.io/component: management
+  annotations:
+    cloud.google.com/load-balancer-type: "Internal"
+spec:
+  type: LoadBalancer
+  selector:
+    app.kubernetes.io/name: gateway-core
+  ports:
+    - name: management
+      port: 8090
+      targetPort: management
+      protocol: TCP

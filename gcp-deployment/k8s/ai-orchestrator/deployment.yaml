@@ -1,0 +1,86 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ai-orchestrator
+  namespace: nexusgate
+  labels:
+    app.kubernetes.io/name: ai-orchestrator
+    app.kubernetes.io/component: orchestrator
+    app.kubernetes.io/part-of: nexusgate
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: ai-orchestrator
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: ai-orchestrator
+        app.kubernetes.io/component: orchestrator
+        app.kubernetes.io/part-of: nexusgate
+    spec:
+      serviceAccountName: nexusgate
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: ai-orchestrator
+          image: REGISTRY_URL/ai-orchestrator:latest
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 8081
+              protocol: TCP
+          env:
+            - name: ORCHESTRATOR_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: nexusgate-config
+                  key: ORCHESTRATOR_PORT
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: nexusgate-secrets
+                  key: database-url
+            - name: ANTHROPIC_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: nexusgate-secrets
+                  key: anthropic-api-key
+            - name: OPENAI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: nexusgate-secrets
+                  key: openai-api-key
+            - name: ANTHROPIC_MODEL
+              valueFrom:
+                configMapKeyRef:
+                  name: nexusgate-config
+                  key: ANTHROPIC_MODEL
+            - name: OPENAI_MODEL
+              valueFrom:
+                configMapKeyRef:
+                  name: nexusgate-config
+                  key: OPENAI_MODEL
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "256Mi"
+            limits:
+              cpu: "1000m"
+              memory: "512Mi"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 5

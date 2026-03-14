@@ -115,9 +115,10 @@ impl RestConnector {
         method: &str,
         operation: &serde_json::Value,
     ) -> Option<Capability> {
+        let fallback_id = format!("{}_{}", method, path.replace('/', "_"));
         let operation_id = operation["operationId"]
             .as_str()
-            .unwrap_or(&format!("{}_{}", method, path.replace('/', "_")));
+            .unwrap_or(&fallback_id);
 
         let description = operation["summary"]
             .as_str()

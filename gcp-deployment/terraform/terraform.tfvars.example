@@ -1,0 +1,17 @@
+# Copy this file to terraform.tfvars and fill in your values
+
+project_id = "my-gcp-project-id"
+region     = "us-central1"
+zone       = "us-central1-a"
+
+# GKE
+cluster_name      = "nexusgate"
+node_count        = 2
+node_machine_type = "e2-standard-4"
+
+# Cloud SQL
+db_tier     = "db-custom-2-4096"
+db_password = "CHANGE_ME_TO_A_STRONG_PASSWORD"
+
+# Redis
+redis_memory_size_gb = 1

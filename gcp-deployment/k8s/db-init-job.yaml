@@ -1,0 +1,78 @@
+# ============================================================================
+# One-time job to initialize the NexusGate database schema.
+# Run after Cloud SQL is provisioned and before deploying services.
+# Usage: kubectl apply -f k8s/db-init-job.yaml
+# ============================================================================
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: nexusgate-db-init
+  namespace: nexusgate
+  labels:
+    app.kubernetes.io/name: nexusgate
+    app.kubernetes.io/component: db-init
+spec:
+  ttlSecondsAfterFinished: 600
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: nexusgate
+        app.kubernetes.io/component: db-init
+    spec:
+      serviceAccountName: nexusgate
+      restartPolicy: OnFailure
+      containers:
+        - name: db-init
+          image: postgres:16-alpine
+          command:
+            - sh
+            - -c
+            - |
+              echo "Waiting for Cloud SQL to be ready..."
+              until pg_isready -h "$PGHOST" -p "$PGPORT" -U "$PGUSER"; do
+                echo "Waiting..."
+                sleep 3
+              done
+              echo "Running schema init..."
+              psql "$DATABASE_URL" -f /sql/init-db.sql
+              echo "Database initialized successfully."
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: nexusgate-secrets
+                  key: database-url
+            - name: PGHOST
+              value: "CLOUD_SQL_PRIVATE_IP"
+            - name: PGPORT
+              value: "5432"
+            - name: PGUSER
+              value: "nexusgate"
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: nexusgate-secrets
+                  key: database-url
+          volumeMounts:
+            - name: sql-scripts
+              mountPath: /sql
+              readOnly: true
+      volumes:
+        - name: sql-scripts
+          configMap:
+            name: nexusgate-sql-init
+---
+# ConfigMap containing the init SQL — created from the source repo's script
+# Generate with: kubectl create configmap nexusgate-sql-init \
+#   --namespace nexusgate \
+#   --from-file=init-db.sql=../nexusgate/scripts/init-db.sql
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nexusgate-sql-init
+  namespace: nexusgate
+data:
+  init-db.sql: |
+    -- This will be replaced by the deploy script with the actual init-db.sql
+    -- from the nexusgate source repo. See scripts/deploy.sh for details.
+    SELECT 1;

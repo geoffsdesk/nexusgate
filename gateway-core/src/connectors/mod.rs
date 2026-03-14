@@ -4,7 +4,7 @@ pub mod grpc;
 pub mod database;
 pub mod manifest;
 
-use async_trait::Trait;
+// async_trait is available but we use native async traits (Rust 1.75+)
 use serde::{Deserialize, Serialize};
 
 use manifest::CapabilityManifest;

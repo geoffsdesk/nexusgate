@@ -1,0 +1,83 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gateway-core
+  namespace: nexusgate
+  labels:
+    app.kubernetes.io/name: gateway-core
+    app.kubernetes.io/component: gateway
+    app.kubernetes.io/part-of: nexusgate
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: gateway-core
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: gateway-core
+        app.kubernetes.io/component: gateway
+        app.kubernetes.io/part-of: nexusgate
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9090"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: nexusgate
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: gateway-core
+          image: REGISTRY_URL/gateway-core:latest
+          imagePullPolicy: Always
+          ports:
+            - name: gateway
+              containerPort: 8080
+              protocol: TCP
+            - name: management
+              containerPort: 8090
+              protocol: TCP
+            - name: metrics
+              containerPort: 9090
+              protocol: TCP
+          env:
+            - name: RUST_LOG
+              value: "nexusgate_gateway=info,tower_http=info"
+            - name: NEXUSGATE_CONFIG
+              value: "/etc/nexusgate/nexusgate.toml"
+          volumeMounts:
+            - name: config
+              mountPath: /etc/nexusgate
+              readOnly: true
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "256Mi"
+            limits:
+              cpu: "1000m"
+              memory: "512Mi"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: gateway
+            initialDelaySeconds: 10
+            periodSeconds: 15
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: gateway
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            failureThreshold: 2
+      volumes:
+        - name: config
+          configMap:
+            name: nexusgate-config
+            items:
+              - key: nexusgate.toml
+                path: nexusgate.toml
